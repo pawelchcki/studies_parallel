@@ -14,6 +14,8 @@ int main(int argc, char* argv[])
     step = 1./(double)num_steps;
     start = clock();
     omp_set_num_threads(2);
+    double suml[2];
+
 #pragma omp parallel
     {
         cpu_set_t cpu;
@@ -21,17 +23,18 @@ int main(int argc, char* argv[])
         CPU_SET(omp_get_thread_num(), &cpu);
         pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpu);
         printf("%d \n", sched_getcpu());
-        double x, suml=0;
+        double x;
+        int nCpu = sched_getcpu();
 
-#pragma omp for reduction(+:sum) schedule (static, num_steps)
+#pragma omp for
         for (i=0; i<num_steps; i++)
         {
             x = (i + .5)*step;
-            sum = sum + 4.0/(1.+ x*x);
+            suml[nCpu] = suml[nCpu] + 4.0/(1.+ x*x);
         }
-    //#pragma omp atomic
-    //    sum += suml;
+
     }
+    sum = suml[0] + suml[1];
 
     pi = sum*step;
     stop = clock();
