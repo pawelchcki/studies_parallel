@@ -1,38 +1,42 @@
-#include <iostream>
-#include<stdio.h>
-#include<omp.h>
+#include <stdio.h>
+#include <time.h>
 #include <pthread.h>
-using namespace std;
+#include <omp.h>
 
-int main()
+long long num_steps = 1000000000;
+double step;
+
+int main(int argc, char* argv[])
 {
-    int i;
-    omp_set_num_threads(6);
-    omp_lock_t lock;
-    omp_unset_lock(&lock);
+    clock_t start, stop;
+    double pi, sum=0.0;
+    long i;
+    step = 1./(double)num_steps;
+    start = clock();
+    omp_set_num_threads(2);
 #pragma omp parallel
     {
-        int th_id = omp_get_thread_num();
         cpu_set_t cpu;
         CPU_ZERO(&cpu);
-        CPU_SET(th_id, &cpu);
-
-
+        CPU_SET(omp_get_thread_num(), &cpu);
         pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpu);
-//        omp_set_lock(&lock);
-//        cout << "Thread number: " << omp_get_thread_num() << "\n";
-//        cout.flush();
-//        omp_unset_lock(&lock);
-//    printf("Hello World\n");
-#pragma omp for schedule(static, 1)
-    for(i=0;i<6;i++){
-        printf("Iter:%d %d\n",i, omp_get_thread_num());
-//    omp_unset_lock(&lock);
+        printf("%d \n", sched_getcpu());
+        double x, suml=0;
+
+#pragma omp for reduction(+:sum) schedule (static, num_steps)
+        for (i=0; i<num_steps; i++)
+        {
+            x = (i + .5)*step;
+            sum = sum + 4.0/(1.+ x*x);
+        }
+    //#pragma omp atomic
+    //    sum += suml;
     }
-    printf("GoodBye World\n");
-    }
-    while (omp_get_thread_num() != 0){
-    }
+
+    pi = sum*step;
+    stop = clock();
+
+    printf("Wartosc liczby PI wynosi %15.12f\n",pi);
+    printf("Czas przetwarzania wynosi %f sekund\n",((double)(stop - start)/1000000.0));
     return 0;
 }
-
