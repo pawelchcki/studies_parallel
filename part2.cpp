@@ -5,8 +5,8 @@
 #include <stdlib.h>
 #include <malloc.h>
 
-long long num_steps = 10000000000;
-double step;
+long long num_steps = 1000000000;
+int cpu_count = 2;
 
 int main(int argc, char* argv[])
 {
@@ -14,16 +14,19 @@ int main(int argc, char* argv[])
     clock_gettime(CLOCK_MONOTONIC, &start);
 
     double pi, sum=0.0;
+    double step;
     long i;
     step = 1./(double)num_steps;
 
-    omp_set_num_threads(2);
+    omp_set_num_threads(cpu_count);
+
+//    double suml[cpu_count];
+//    volatile double *suml = (volatile double*)malloc(100000);
+
     volatile double *suml;
-//    posix_memalign((void**)&suml, 1, 4);
-//    suml = (double*) malloc(4);
     posix_memalign((void**)&suml, 64, 4*64);
 
-#pragma omp parallel
+#pragma omp parallel shared(suml)
     {
         cpu_set_t cpu;
         CPU_ZERO(&cpu);
@@ -33,8 +36,8 @@ int main(int argc, char* argv[])
 
         printf("%d \n", sched_getcpu());
         double x;
-//        int nCpu =  omp_get_thread_num() * 64;
-        int nCpu =  omp_get_thread_num();
+//        int nCpu =  omp_get_thread_num();
+        int nCpu =  omp_get_thread_num() * (64/sizeof(double));
         suml[nCpu] = 0;
 #pragma omp for
         for (i=0; i<num_steps; i++)
@@ -44,16 +47,18 @@ int main(int argc, char* argv[])
         }
 
 
-//#pragma omp atomic
+#pragma omp atomic
         sum +=  suml[nCpu];
 
     }
 //    sum = suml[0] + suml[1];
 
     pi = sum*step;
+    printf("Wartosc liczby PI wynosi %15.12f\n",pi);
+
     clock_gettime(CLOCK_MONOTONIC, &stop);;
 
-    printf("Wartosc liczby PI wynosi %15.12f\n",pi);
+
     printf("Czas przetwarzania wynosi %f sekund\n",((double)(stop.tv_nsec - start.tv_nsec)/1000000000.0)+(stop.tv_sec - start.tv_sec));
     return 0;
 }
