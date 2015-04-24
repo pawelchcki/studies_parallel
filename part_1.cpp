@@ -4,7 +4,7 @@
 #include <pthread.h>
 using namespace std;
 
-int main2()
+int main()
 {
     int i;
     omp_set_num_threads(6);
@@ -18,16 +18,12 @@ int main2()
         CPU_SET(th_id, &cpu);
 
 
-        pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpu);
+//        pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpu);
 //        omp_set_lock(&lock);
-//        cout << "Thread number: " << omp_get_thread_num() << "\n";
-//        cout.flush();
-//        omp_unset_lock(&lock);
-//    printf("Hello World\n");
-#pragma omp for schedule(static, 1)
+    printf("Hello World\n");
+#pragma omp for
     for(i=0;i<6;i++){
         printf("Iter:%d %d\n",i, omp_get_thread_num());
-//    omp_unset_lock(&lock);
     }
     printf("GoodBye World\n");
     }

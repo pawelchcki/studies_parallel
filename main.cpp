@@ -2,8 +2,10 @@
 #include <time.h>
 #include <pthread.h>
 #include <omp.h>
+#include <stdlib.h>
+#include <malloc.h>
 
-long long num_steps = 1000000000;
+long long num_steps = 10000000000;
 double step;
 
 int main(int argc, char* argv[])
@@ -13,8 +15,10 @@ int main(int argc, char* argv[])
     long i;
     step = 1./(double)num_steps;
     start = clock();
-    omp_set_num_threads(2);
-    double suml[2];
+    omp_set_num_threads(4);
+    volatile double *suml;
+    posix_memalign((void**)&suml, 64, 4*64);
+
 
 #pragma omp parallel
     {
@@ -24,17 +28,19 @@ int main(int argc, char* argv[])
         pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpu);
         printf("%d \n", sched_getcpu());
         double x;
-        int nCpu = sched_getcpu();
-
+        int nCpu =  omp_get_thread_num() * 64;
+        suml[nCpu] = 0;
 #pragma omp for
         for (i=0; i<num_steps; i++)
         {
             x = (i + .5)*step;
             suml[nCpu] = suml[nCpu] + 4.0/(1.+ x*x);
         }
+#pragma omp atomic
+        sum +=  suml[nCpu];
 
     }
-    sum = suml[0] + suml[1];
+//    sum = suml[0] + suml[1];
 
     pi = sum*step;
     stop = clock();
