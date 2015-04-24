@@ -11,6 +11,7 @@ aux_source_directory(. SRC_LIST)
 add_executable(main main.cpp)
 add_executable(part_1 part_1.cpp)
 add_executable(part_2 part2.cpp)
+add_executable(part_2_basic part2_basic.cpp)
 
 
 set(CMAKE_BUILD_TYPE Release)
