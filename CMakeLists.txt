@@ -12,6 +12,6 @@ add_executable(main main.cpp)
 add_executable(part_1 part_1.cpp)
 add_executable(part_2 part2.cpp)
 add_executable(part_2_basic part2_basic.cpp)
-
+add_executable(part_2_reduction part2_reduction.cpp)
 
 set(CMAKE_BUILD_TYPE Release)
